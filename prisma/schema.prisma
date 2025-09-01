@@ -1,0 +1,54 @@
+// Prisma schema for Neon PostgreSQL
+// Run: pnpm add -D prisma && pnpm add @prisma/client
+// Then: npx prisma generate && npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  dateOfBirth String?  // store as string to match current UI format
+  googleId   String?  @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  notes Note[]
+  otps  Otp[]
+}
+
+model Otp {
+  id         String   @id @default(cuid())
+  email      String
+  codeHash   String
+  purpose    OtpPurpose
+  expiresAt  DateTime
+  consumed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@index([email])
+  @@index([expiresAt])
+}
+
+enum OtpPurpose {
+  SIGNUP
+  SIGNIN
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+}
